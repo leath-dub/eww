@@ -1,0 +1,20 @@
+#!/bin/sh
+
+check() {
+  amixer get Master | awk -F'[][]' '{ print $6 }' | tr -d '\n'
+}
+
+toggle() {
+  case `check` in
+    on) amixer -q set Master toggle && echo "false" ;;
+    off) amixer -q set Master toggle && echo "true" ;;
+  esac
+}
+
+case $1 in
+  toggle) toggle ;;
+  check) case `check` in
+    on) echo "true" ;;
+    off) echo "false" ;;
+  esac ;;
+esac

@@ -1,0 +1,138 @@
+(defvar eww "$HOME/.local/bin/eww")
+
+; Battery
+(defwidget bat []
+ (box :orientation "h"
+      :space-evenly "false"
+  (label :class "${battery-color} icon battery"
+         :text battery
+         :tooltip "Battery: ${battery-cappacity}%")))
+(defpoll battery :interval "1s"	"scripts/battery icon")
+(defpoll battery-cappacity :interval "1s" "scripts/battery percent")
+(defpoll battery-color :interval "5s" "scripts/battery status")
+
+; Workspaces
+(deflisten workspaces :initial "[]" "bash ~/.config/eww/scripts/get-workspaces")
+(deflisten current_workspace :initial "1" "bash ~/.config/eww/scripts/get-active-workspace")
+(defwidget workspaces []
+  (eventbox :onscroll "bash ~/.config/eww/scripts/change-active-workspace {} ${current_workspace}" :class "workspaces-widget"
+    (box :space-evenly false
+      (label :text "${workspaces}${current_workspace}" :visible false)
+      (for workspace in workspaces
+        (eventbox :onclick "hyprctl dispatch workspace ${workspace.id}"
+          (box :class "workspace-entry ${workspace.id == current_workspace ? "current" : ""} ${workspace.windows > 0 ? "occupied" : "empty"}"
+            (label :text "${workspace.id}")
+            )
+          )
+        )
+      )
+    )
+  )
+
+; Volume
+(defwidget volum []
+	(eventbox :onhover "${EWW_CMD} update volum=true" 		
+			  :onhoverlost "${EWW_CMD} update volum=false"
+	(box :space-evenly false 
+	(revealer :transition "slideright" 
+			  :reveal volum         
+			  :duration "550ms"
+	(scale    :class "volbar" 	  
+			  :value current-volume 
+			  :tooltip "Volume: ${current-volume}%" 
+			  :max 100
+			  :min 0 
+			  :onchange "amixer set Master {}%" ))
+	(button :onclick "scripts/audio toggle | xargs -i ${EWW_CMD} update is_on=\{}" :class "icon volume-icon" {is_on ? "󰕾" : "󰖁"}))))
+(defpoll current-volume :interval "1s" "amixer get Master | awk -F'[][]' '{ print $2 }' | tr -d '%'")
+(defvar volum false)
+(defpoll is_on :run-while false :interval "1s" "scripts/audio check") ; this is some hack eyy :>
+
+
+; Brightness
+(defpoll brightness_percent :interval "1s" "brightnessctl -m -d intel_backlight | awk -F, '{print substr($4, 0, length($4)-1)}' | tr -d '%'")
+(defvar reveal_brightness false)
+(defwidget brightness []
+  (eventbox :onhover "${EWW_CMD} update reveal_brightness=true"
+            :onhoverlost "${EWW_CMD} update reveal_brightness=false"
+    (box :space-evenly false
+      (revealer :transition "slideright"
+                :reveal reveal_brightness
+		:duration "550ms"
+        (scale :class "brightness"
+               :value brightness_percent
+               :max 100
+               :min 10
+	       :tooltip "Brightness: ${brightness_percent}%"
+	       :onchange "brightnessctl set {}%"))
+      (label :class "icon brightness-icon" :text "󰖨"))))
+
+; Time and Calender
+(defwidget time []
+	(button :onclick "${EWW_CMD} ${calender_open ? "close" : "open" } calendar && ${EWW_CMD} update calender_open=${!calender_open}" clock))
+(defpoll clock :interval "1m" "date '+%H:%M'")
+(defvar calender_open false)
+
+(defwidget cal []
+	(box :class "cal-box" 
+		 :orientation "v"
+	(box :class "cal-inner-box"
+	(calendar :class "cal" 
+			  :day calendar_day 
+			  :month calendar_month 
+			  :year calendar_year))))
+(defpoll calendar_day :interval "10h"
+    "date '+%d'")
+(defpoll calendar_month :interval "10h"
+    "scripts/calendar")
+(defpoll calendar_year :interval "10h"
+    "date '+%Y'")
+
+(defwindow calendar
+        :monitor 0
+	:geometry (geometry :x "83%" 
+						:y "80%" 
+						:width "300px" 
+						:height "80px")
+(cal))
+
+; Power
+(defvar reveal_power false)
+(defwidget power []
+  (eventbox :onhover "${EWW_CMD} update reveal_power=true"
+            :onhoverlost "${EWW_CMD} update reveal_power=false"
+            (box :space-evenly false
+                 (revealer :transition "slideright"
+                           :reveal reveal_power
+                           :duration "550ms"
+		           (box :space-evenly true
+                                :class "power-item-container"
+                                :spacing 20
+                                (button :onclick "reboot" :class "icon power-reboot-icon" :tooltip "Reboot" "")
+				(button :onclick "killall Hyprland" :class "icon power-logout-icon" :tooltip "Logout" "󰍃")
+				(button :class "icon power-lock-icon" :tooltip "Lock Screen" "")))
+		 (button :onclick "poweroff" :class "icon power-off-icon" :tooltip "Power off" ""))))
+
+(defwidget left []
+  (box :class "left" (workspaces)))
+
+(defwidget right []
+  (box :class "right"
+       :space-evenly false
+       :spacing 20
+       :halign "end" (volum) (brightness) (bat) (time) (power)))
+
+(defwidget bar []
+  (box :space-evenly true
+    (left) (right)))
+
+(defwindow bar
+  :monitor 0
+  :windowtype "dock"
+  :exclusive true
+  :geometry (geometry :x "0%"
+                      :y "0%"
+                      :width "100%"
+                      :height "10px"
+                      :anchor "bottom center")
+  (bar))

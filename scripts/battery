@@ -1,0 +1,56 @@
+#!/bin/sh
+
+sys_file='/sys/class/power_supply/BAT*'
+
+# Calculate the percentage of all batteries
+get_perc() {
+  charge_full=0
+  charge_now=0
+  for battery in $sys_file
+  do
+    charge_full=$((charge_full + `cat $battery/charge_full`))
+    charge_now=$((charge_now + `cat $battery/charge_now`))
+  done
+  python3 -c "perc=$charge_now * 100 // $charge_full; print(perc, perc // 10)"
+}
+
+icon() {
+  perc=$1
+  slot=$2
+
+  case $slot in
+    0) icon="󰂃" ;; # <10%
+    1) icon="󰁻" ;; # 10%
+    2) icon="󰁼" ;; # 20%
+    3) icon="󰁽" ;; # 30%
+    4) icon="󰁾" ;; # 40%
+    5) icon="󰁿" ;; # 50%
+    6) icon="󰂀" ;; # 60%
+    7) icon="󰂁" ;; # 70%
+    8) icon="󰂂" ;; # 80%
+    9|10) icon="󰁹" ;; # >90%
+  esac
+  
+  echo $icon
+}
+
+battery_status() {
+  perc=$1
+
+  if [ ! "$perc" -gt 30 ]
+  then
+    echo "battery-low"
+  elif [ ! "$perc" -gt 50 ]
+  then
+    echo "battery-medium"
+  else
+    echo "battery-high"
+  fi
+
+}
+
+case $1 in
+  percent) get_perc | awk '{print $1}' ;;
+  icon) icon `get_perc` ;;
+  status) battery_status `get_perc`;;
+esac
