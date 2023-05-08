@@ -29,6 +29,12 @@
     )
   )
 
+; Wifi
+(defpoll ss_icon :interval "10s" "scripts/wifi icon")
+(defpoll ss_num :interval "10s" "scripts/wifi signal")
+(defwidget wifi []
+  (label :tooltip "Signal Strength: ${ss_num}" :class "icon wifi-icon" :text ss_icon))
+
 ; Volume
 (defwidget volum []
 	(eventbox :onhover "${EWW_CMD} update volum=true" 		
@@ -120,7 +126,7 @@
   (box :class "right"
        :space-evenly false
        :spacing 20
-       :halign "end" (volum) (brightness) (bat) (time) (power)))
+       :halign "end" (bat) (wifi) (brightness) (volum) (time) (power)))
 
 (defwidget bar []
   (box :class "bar" :space-evenly true
