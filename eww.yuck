@@ -114,7 +114,7 @@
 		 (button :onclick "poweroff" :class "icon power-off-icon" :tooltip "Power off" ""))))
 
 (defwidget left []
-  (box :class "left" (workspaces)))
+  (box :class "left" :space-evenly false (workspaces)))
 
 (defwidget right []
   (box :class "right"
@@ -123,7 +123,7 @@
        :halign "end" (volum) (brightness) (bat) (time) (power)))
 
 (defwidget bar []
-  (box :space-evenly true
+  (box :class "bar" :space-evenly true
     (left) (right)))
 
 (defwindow bar
