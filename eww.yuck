@@ -71,7 +71,7 @@
                :min 10
 	       :tooltip "Brightness: ${brightness_percent}%"
 	       :onchange "brightnessctl set {}%"))
-      (label :class "icon brightness-icon" :text "󰖨"))))
+      (label :class "icon brightness-icon" :text "󰃠"))))
 
 ; Time and Calender
 (defwidget time []
