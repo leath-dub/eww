@@ -1,20 +1,18 @@
 #!/bin/sh
 
-dBm_to_ss() (
-  dBm=$1
-  python3 -c "print(int(($dBm + 100) / 70 * 100))"
-)
-
 signal() {
   dBm=`cat /proc/net/wireless | awk 'NR==3{print int($4)}'`
-  signal_strength=`dBm_to_ss $dBm`
-  case `python3 -c "print(int(($dBm + 100) / 70 * 100) % 4)"` in
-    0) echo "󰤟" $signal_strength;;
-    1) echo "󰤢" $signal_strength;;
-    2) echo "󰤥" $signal_strength;;
-    3) echo "󰤨" $signal_strength;;
-    *) echo "󰤩" 0 ;;
-  esac
+  if [ -30 -le $dBm ] && [ $dBm -gt -67 ]; then
+    echo "󰤨" $dBm
+  elif [ -70 -le $dBm ] && [ $dBm -gt -80 ]; then
+    echo "󰤥" $dBm
+  elif [ -80 -le $dBm ] && [ $dBm -gt -90 ]; then
+    echo "󰤢" $dBm
+  elif [ -90 -le $dBm ] && [ $dBm -gt -90 ]; then
+    echo "󰤟" $dBm
+  else
+    echo "󰤩" 0
+  fi
 }
 
 case $1 in
