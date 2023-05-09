@@ -1,21 +1,19 @@
 #!/bin/sh
 
 signal() {
-  dBm=`cat /proc/net/wireless | awk 'NR==3{print int($4)}'`
-  if [ -30 -le $dBm ] && [ $dBm -gt -67 ]; then
-    echo "󰤨" $dBm
-  elif [ -70 -le $dBm ] && [ $dBm -gt -80 ]; then
-    echo "󰤥" $dBm
-  elif [ -80 -le $dBm ] && [ $dBm -gt -90 ]; then
-    echo "󰤢" $dBm
-  elif [ -90 -le $dBm ] && [ $dBm -gt -90 ]; then
-    echo "󰤟" $dBm
-  else
-    echo "󰤩" 0
-  fi
+    link=`cat /proc/net/wireless | awk 'NR==3{print int($3)}'`
+	ss="$(( $link * 100 / 70 ))"
+	slot=`expr $ss % 4`
+	case "$slot" in
+		0) echo "󰤟" $ss ;;
+		1) echo "󰤢" $ss ;;
+		2) echo "󰤥" $ss ;;
+		3) echo "󰤨" $ss ;;
+		*) echo "󰤩" 0 ;;
+	esac
 }
 
 case $1 in
-  icon) signal | awk '{print $1}' ;;
-  signal) signal | awk '{print $2}' ;;
+    icon) signal | awk '{print $1}' ;;
+    signal) signal | awk '{print $2}' ;;
 esac

@@ -33,7 +33,7 @@
 (defpoll ss_icon :interval "10s" "scripts/wifi icon")
 (defpoll ss_num :interval "10s" "scripts/wifi signal")
 (defwidget wifi []
-  (label :tooltip "dBm: ${ss_num}" :class "icon wifi-icon" :text ss_icon))
+  (label :tooltip "Signal Strength: ${ss_num}" :class "icon wifi-icon" :text ss_icon))
 
 ; Volume
 (defwidget volum []
