@@ -3,12 +3,11 @@
 signal() {
     link=`cat /proc/net/wireless | awk 'NR==3{print int($3)}'`
 	ss="$(( $link * 100 / 70 ))"
-	slot=`expr $ss / 25`
-	case "$slot" in
-		0) echo "󰤟" $ss ;;
-		1) echo "󰤢" $ss ;;
-		2) echo "󰤥" $ss ;;
-		3) echo "󰤨" $ss ;;
+	case "${ss%?}" in
+		[0-2]) echo "󰤟" $ss ;;
+		[3-4]) echo "󰤢" $ss ;;
+		[5-6]) echo "󰤥" $ss ;;
+		[7-9]|10) echo "󰤨" $ss ;;
 		*) echo "󰤩" 0 ;;
 	esac
 }
