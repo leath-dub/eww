@@ -12,22 +12,32 @@
 (defpoll battery-color :interval "5s" "scripts/battery status")
 
 ; Workspaces
-(deflisten workspaces :initial "[]" "bash ~/.config/eww/scripts/get-workspaces")
-(deflisten current_workspace :initial "1" "bash ~/.config/eww/scripts/get-active-workspace")
+; (deflisten workspaces :initial "[]" "bash ~/.config/eww/scripts/get-workspaces")
+; (deflisten current_workspace :initial "1" "bash ~/.config/eww/scripts/get-active-workspace")
+; (defwidget workspaces []
+;   (eventbox :onscroll "bash ~/.config/eww/scripts/change-active-workspace {} ${current_workspace}" :class "workspaces-widget"
+;     (box :space-evenly false
+;       (label :text "${workspaces}${current_workspace}" :visible false)
+;       (for workspace in workspaces
+;         (eventbox :onclick "hyprctl dispatch workspace ${workspace.id}"
+;           (box :class "workspace-entry ${workspace.id == current_workspace ? "current" : ""} ${workspace.windows > 0 ? "occupied" : "empty"}"
+;             (label :text "${workspace.id}")
+;             )
+;           )
+;         )
+;       )
+;     )
+;   )
+(deflisten bspwm-state :initial "[]" "sh ~/.config/eww/scripts/bspwm/state")
 (defwidget workspaces []
-  (eventbox :onscroll "bash ~/.config/eww/scripts/change-active-workspace {} ${current_workspace}" :class "workspaces-widget"
-    (box :space-evenly false
-      (label :text "${workspaces}${current_workspace}" :visible false)
-      (for workspace in workspaces
-        (eventbox :onclick "hyprctl dispatch workspace ${workspace.id}"
-          (box :class "workspace-entry ${workspace.id == current_workspace ? "current" : ""} ${workspace.windows > 0 ? "occupied" : "empty"}"
-            (label :text "${workspace.id}")
-            )
-          )
-        )
-      )
-    )
-  )
+  (box :space-evenly false :spacing 10 :class "workspaces"
+    (for desktop in {bspwm-state.desktops}
+      (eventbox :onclick "bspc desktop -f ${desktop.id}"
+        (box :class "workspace-entry ${bspwm-state.focusedDesktopId == desktop.id ? "current" : ""} ${desktop.root == "null" ? "unoccupied" : "occupied"}")))))
+
+(deflisten bspwm-node :initial "{}" "sh ~/.config/eww/scripts/bspwm/node")
+(defwidget title []
+  (label :text {bspwm-node.client.className}))
 
 ; Wifi
 (defpoll ss_icon :interval "10s" "scripts/wifi icon")
@@ -40,17 +50,17 @@
 	(eventbox :onhover "${EWW_CMD} update volum=true" 		
 			  :onhoverlost "${EWW_CMD} update volum=false"
 	(box :space-evenly false 
-	(revealer :transition "slideright" 
-			  :reveal volum         
+	(revealer :transition "slideright"
+			  :reveal volum
 			  :duration "550ms"
-	(scale    :class "volbar" 	  
-			  :value current-volume 
+	(scale    :class "volbar"
+			  :value current-volume
 			  :tooltip "Volume: ${current-volume}%" 
 			  :max 100
-			  :min 0 
-			  :onchange "amixer set Master {}%" ))
+			  :min 0
+			  :onchange { volum ? "amixer set Master {}%" : "" } ))
 	(button :onclick "scripts/audio toggle | xargs -i ${EWW_CMD} update is_on=\{}" :class "icon volume-icon" {is_on ? "󰕾" : "󰖁"}))))
-(defpoll current-volume :interval "1s" "amixer get Master | awk -F'[][]' '{ print $2 }' | tr -d '%'")
+(defpoll current-volume :interval "1s" "amixer get Master | awk -F'[][]' '{ print $2 }' | tr -d '%' | tail -1")
 (defvar volum false)
 (defpoll is_on :run-while false :interval "1s" "scripts/audio check") ; this is some hack eyy :>
 
@@ -70,12 +80,13 @@
                :max 100
                :min 10
 	       :tooltip "Brightness: ${brightness_percent}%"
-	       :onchange "brightnessctl set {}%"))
+	       :onchange {reveal_brightness ? "brightnessctl set {}%" : ""}))
       (label :class "icon brightness-icon" :text "󰃠"))))
 
 ; Time and Calender
 (defwidget time []
-	(button :onclick "${EWW_CMD} ${calender_open ? "close" : "open" } calendar && ${EWW_CMD} update calender_open=${!calender_open}" clock))
+  (box :class "time-box" :space-evenly false
+	(button :onclick "${EWW_CMD} ${calender_open ? "close" : "open" } calendar && ${EWW_CMD} update calender_open=${!calender_open}" clock)))
 (defpoll clock :interval "1m" "date '+%H:%M'")
 (defvar calender_open false)
 
@@ -129,16 +140,29 @@
        :halign "end" (bat) (wifi) (brightness) (volum) (time) (power)))
 
 (defwidget bar []
-  (box :class "bar" :space-evenly true
-    (left) (right)))
+  (centerbox :class "bar"
+    (left) (title) (right)))
 
-(defwindow bar
+(defwindow bar-wl
   :monitor 0
-  :windowtype "dock"
+  :windowtype "toolbar"
   :exclusive true
   :geometry (geometry :x "0%"
                       :y "0%"
                       :width "100%"
                       :height "10px"
                       :anchor "bottom center")
+  (bar))
+
+(defwindow bar-x11
+  :monitor 0
+  :windowtype "dock"
+  :stacking "bg"
+  :geometry (geometry :x "0%"
+                      :y "0%"
+                      :width "100%"
+                      :height "10px"
+                      :anchor "top center")
+  :reserve (struts :distance "47px" :side "top")
+  :wm-ignore false
   (bar))

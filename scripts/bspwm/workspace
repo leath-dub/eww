@@ -1,0 +1,39 @@
+#!/bin/sh
+
+# Check nodes attached to desktop
+# bspc query -N -d {desktop_id}
+
+# Check desktop ids for focused monitor
+# bspc query -D -m focused
+
+occupied() {
+    bspc subscribe desktop | while read _; do
+        echo -n "["
+        sep=""
+        bspc query -D -d .occupied | while read ws; do
+            echo -n "${sep}${ws}"
+            sep=", "
+        done
+        echo "]"
+    done
+}
+
+focused() {
+    bspc subscribe desktop | while read _; do
+        bspc query -D -d focused
+    done
+}
+
+modifier() {
+    if shift 1; [ -n "$(bspc query -D -d "$1.$2")" ]; then
+        echo "true"
+    else
+        echo "false"
+    fi
+}
+
+case "$1" in
+    occupied) occupied ;;
+    focused) focused ;;
+    has-mod) modifier $* ;;
+esac

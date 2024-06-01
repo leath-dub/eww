@@ -1,0 +1,6 @@
+#!/bin/sh
+
+bspc query -T -d focused -n focused
+bspc subscribe node | while read _; do
+    bspc query -T -d focused -n focused
+done
